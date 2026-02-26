@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prince Super Market - Master System</title>
+    <style>
+        :root { --royal-gold: #d4af37; --prince-blue: #1a2a6c; --success: #27ae60; --light: #f8f9fa; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: var(--light); }
+        
+        /* Branding Header */
+        header { background: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d); color: white; padding: 20px; text-align: center; shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        header h1 { margin: 0; font-size: 2.5rem; letter-spacing: 2px; text-transform: uppercase; }
+
+        /* Navigation */
+        nav { background: #333; display: flex; justify-content: center; padding: 10px; position: sticky; top: 0; z-index: 1000; }
+        nav button { background: none; border: 1px solid rgba(255,255,255,0.3); color: white; padding: 10px 25px; margin: 0 10px; cursor: pointer; border-radius: 20px; transition: 0.3s; }
+        nav button.active { background: var(--royal-gold); color: black; font-weight: bold; border-color: var(--royal-gold); }
+
+        .page { display: none; padding: 30px; max-width: 1200px; margin: auto; animation: fadeIn 0.5s; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Storefront Grid */
+        .store-container { display: grid; grid-template-columns: 3fr 1fr; gap: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid var(--royal-gold); }
+        .card:hover { transform: translateY(-5px); transition: 0.3s; }
+        
+        /* Cart & Sidebar */
+        .sidebar-box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: sticky; top: 100px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; margin-top: 15px; transition: 0.2s; }
+        .btn-add { background: var(--prince-blue); color: white; }
+        .btn-order { background: var(--success); color: white; }
+
+        /* Admin Table */
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
+        th { background: var(--prince-blue); color: white; padding: 15px; }
+        td { padding: 15px; border-bottom: 1px solid #eee; }
+
+        /* Driver UI */
+        .driver-card { max-width: 450px; margin: auto; background: #222; color: white; padding: 30px; border-radius: 25px; border: 3px solid var(--royal-gold); }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>👑 Prince Super Market</h1>
+    <p>Premium Quality • Fast Delivery • Royal Service</p>
+</header>
+
+<nav>
+    <button onclick="showPage('store')" id="tab-store" class="active">🛍️ Shop Now</button>
+    <button onclick="showPage('admin')" id="tab-admin">📊 Manager Dashboard</button>
+    <button onclick="showPage('driver')" id="tab-driver">🚛 Delivery Portal</button>
+</nav>
+
+<div id="store" class="page active">
+    <div class="store-container">
+        <section>
+            <h2 style="color: var(--prince-blue);">Our Premium Shelves</h2>
+            <div class="grid" id="product-grid"></div>
+        </section>
+        <aside>
+            <div class="sidebar-box">
+                <h3>Your Royal Cart</h3>
+                <div id="cart-items" style="color: #666; font-style: italic;">No items selected yet.</div>
+                <hr>
+                <h3>Total: $<span id="cart-total">0.00</span></h3>
+                <label><b>Delivery Location:</b></label>
+                <div id="map-mock" style="height: 150px; background: #e0e0e0; margin: 10px 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: #555;">
+                    📍 Map GPS Active
+                </div>
+                <input type="text" id="cust-address" placeholder="Enter Delivery Address" style="width: 95%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                <button class="btn btn-order" onclick="submitOrder()">Place Your Order</button>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<div id="admin" class="page">
+    <h2 style="color: var(--prince-blue);">Order Management - Prince Super Market</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Order Details</th>
+                <th>Amount</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="admin-orders"></tbody>
+    </table>
+</div>
+
+<div id="driver" class="page">
+    <div class="driver-card">
+        <h2 style="color: var(--royal-gold);">Next Delivery</h2>
+        <div id="driver-job">
+            <p>Scanning for new orders in the Prince Super Market area...</p>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn" style="background: #3498db; color: white;" onclick="alert('Rerouting to customer GPS...')">📍 Navigate</button>
+            <button class="btn" style="background: var(--success); color: white;" onclick="alert('Connecting to Prince...')">📞 Call Client</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const products = [
+        { id: 1, name: "Premium Milk", price: 4.5, icon: "🥛" },
+        { id: 2, name: "Artisan Bread", price: 3.2, icon: "🍞" },
+        { id: 3, name: "Farm Eggs", price: 6.0, icon: "🥚" },
+        { id: 4, name: "King Apples", price: 2.5, icon: "🍎" },
+        { id: 5, name: "Fresh Salmon", price: 18.0, icon: "🐟" }
+    ];
+
+    let cart = [];
+    let orders = [];
+
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        document.getElementById('tab-' + pageId).classList.add('active');
+        if(pageId === 'admin') renderAdmin();
+        if(pageId === 'driver') renderDriver();
+    }
+
+    function init() {
+        const grid = document.getElementById('product-grid');
+        grid.innerHTML = products.map(p => `
+            <div class="card">
+                <div style="font-size: 50px;">${p.icon}</div>
+                <h3 style="margin: 10px 0;">${p.name}</h3>
+                <p style="font-weight: bold; color: var(--success);">$${p.price.toFixed(2)}</p>
+                <button class="btn btn-add" onclick="addToCart(${p.id})">Add to Basket</button>
+            </div>
+        `).join('');
+    }
+
+    function addToCart(id) {
+        const item = products.find(p => p.id === id);
+        cart.push(item);
+        const list = document.getElementById('cart-items');
+        list.innerHTML = cart.map(i => `<div style="padding: 5px 0; border-bottom: 1px solid #eee;">• ${i.name} - $${i.price}</div>`).join('');
+        const total = cart.reduce((s, i) => s + i.price, 0);
+        document.getElementById('cart-total').innerText = total.toFixed(2);
+    }
+
+    function submitOrder() {
+        const addr = document.getElementById('cust-address').value;
+        if(cart.length === 0) return alert("Prince, please select items first.");
+        if(!addr) return alert("Please specify the delivery location.");
+
+        const newOrder = {
+            id: Math.floor(1000 + Math.random() * 9000),
+            customer: "Prince",
+            items: cart.map(i => i.name).join(", "),
+            total: cart.reduce((s, i) => s + i.price, 0).toFixed(2),
+            address: addr,
+            status: "In Preparation"
+        };
+        orders.push(newOrder);
+        alert("Order received! Prince Super Market is now processing your request.");
+        cart = [];
+        document.getElementById('cart-items').innerText = "No items selected yet.";
+        document.getElementById('cart-total').innerText = "0.00";
+    }
+
+    function renderAdmin() {
+        const body = document.getElementById('admin-orders');
+        body.innerHTML = orders.map(o => `
+            <tr>
+                <td>#PSM-${o.id}</td>
+                <td><b>${o.customer}</b></td>
+                <td>${o.items}</td>
+                <td><b>$${o.total}</b></td>
+                <td style="color: var(--success); font-weight: bold;">${o.status}</td>
+            </tr>
+        `).join('');
+    }
+
+    function renderDriver() {
+        const job = document.getElementById('driver-job');
+        if(orders.length > 0) {
+            const last = orders[orders.length - 1];
+            job.innerHTML = `<h3>Deliver to: ${last.customer}</h3><p>📍 ${last.address}</p><p>📦 ${last.items}</p>`;
+        }
+    }
+
+    init();
+</script>
+
+</body>
+</html>
